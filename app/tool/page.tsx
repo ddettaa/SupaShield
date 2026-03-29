@@ -505,14 +505,13 @@ export default function ToolPage() {
               </div>
             </section>
 
-            {/* ── 03: Payload Builder ── */}
+            {/* ── 03: Payload Builder (hanya tampil untuk POST/PUT/PATCH/DELETE) ── */}
+            {method !== 'GET' && (
             <section className="p-6 border-b border-outline-variant/20 relative z-10">
               <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                 <div className="flex items-center gap-3">
                   <span className="bg-primary text-on-primary text-[10px] font-bold w-6 h-6 flex items-center justify-center">03</span>
-                  <h2 className="font-mono text-sm uppercase tracking-tight">
-                    {method === 'GET' ? 'Parameter Tambahan (Opsional)' : 'Payload Body'}
-                  </h2>
+                  <h2 className="font-mono text-sm uppercase tracking-tight">Payload Body</h2>
                 </div>
                 <div className="flex items-center gap-0 relative z-20">
                   <button
@@ -548,16 +547,14 @@ export default function ToolPage() {
               {payloadMode === 'kv' && (
                 <>
                   <p className="font-mono text-[9px] text-outline-variant mb-4 leading-relaxed max-w-2xl">
-                    {method === 'GET'
-                      ? 'Jika query sudah ada di URL, bagian ini bisa dikosongkan. Tambahkan hanya jika butuh filter ekstra.'
-                      : 'Susun body JSON sebagai pasangan key-value. Tipe data otomatis dideteksi (true/false → boolean, angka → number).'}
+                    Susun body JSON sebagai pasangan key-value. Tipe data otomatis dideteksi (true/false → boolean, angka → number).
                   </p>
                   <div className="space-y-2 relative z-20">
                     {payloadParams.map((param) => (
                       <div key={param.id} className="flex gap-2 items-center group">
                         <input
                           className={`flex-1 bg-surface-container-lowest border font-mono text-xs p-2.5 text-primary outline-none focus:border-primary transition-all ${param.key ? 'border-primary/40' : 'border-outline-variant/40'}`}
-                          placeholder={method === 'GET' ? 'Query key' : 'Kunci JSON'}
+                          placeholder="Kunci JSON"
                           type="text"
                           value={param.key}
                           onChange={(e) => updateParam(param.id, 'key', e.target.value)}
@@ -565,7 +562,7 @@ export default function ToolPage() {
                         <span className="text-outline-variant font-mono text-xs">:</span>
                         <input
                           className={`flex-1 bg-surface-container-lowest border font-mono text-xs p-2.5 text-on-surface outline-none focus:border-primary transition-all ${param.value ? 'border-primary/40' : 'border-outline-variant/40'}`}
-                          placeholder={method === 'GET' ? 'Nilai' : 'Isi Nilai'}
+                          placeholder="Isi Nilai"
                           type="text"
                           value={param.value}
                           onChange={(e) => updateParam(param.id, 'value', e.target.value)}
@@ -672,6 +669,7 @@ export default function ToolPage() {
                 </div>
               )}
             </section>
+            )}
 
             {/* ── 04: Execute ── */}
             <section className="p-10 md:p-14 flex flex-col items-center justify-center bg-surface-container-lowest/30 relative z-10">
