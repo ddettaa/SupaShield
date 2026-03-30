@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useI18n } from '../../lib/i18n/context';
 
 type PayloadParam = { id: string; key: string; value: string };
 
@@ -12,75 +13,77 @@ type ScanResponse = {
   data?: any;
 };
 
-// Definisi Template Injeksi berdasarkan kerentanan umum Supabase/PostgREST
-const INJECTION_TEMPLATES = [
-  {
-    label: 'Dump Seluruh Tabel Users',
-    desc: 'Mengecek apakah RLS aktif dengan request SELECT * pada tabel users.',
-    icon: 'person_search',
-    url: '/rest/v1/users?select=*',
-    method: 'GET' as const,
-    severity: 'TINGGI',
-    severityColor: 'text-error',
-  },
-  {
-    label: 'Eskalasi Privilege (is_admin)',
-    desc: 'Mencoba menyuntikkan kolom is_admin menjadi true pada tabel profiles.',
-    icon: 'admin_panel_settings',
-    url: '/rest/v1/profiles?id=eq.1',
-    method: 'PATCH' as const,
-    severity: 'KRITIS',
-    severityColor: 'text-error',
-    payload: [
-      { id: 'tmpl1', key: 'is_admin', value: 'true' },
-      { id: 'tmpl2', key: 'role', value: 'superadmin' },
-    ],
-  },
-  {
-    label: 'Baca Data Pengguna Lain (IDOR)',
-    desc: 'Mengambil data profil milik user_id lain tanpa autentikasi pemilik.',
-    icon: 'group',
-    url: '/rest/v1/profiles?user_id=eq.VICTIM-UUID-HERE&select=*',
-    method: 'GET' as const,
-    severity: 'TINGGI',
-    severityColor: 'text-error',
-  },
-  {
-    label: 'Panggil RPC Tanpa Auth',
-    desc: 'Mengeksekusi fungsi SECURITY DEFINER yang terbuka tanpa token valid.',
-    icon: 'terminal',
-    url: '/rest/v1/rpc/get_all_users',
-    method: 'POST' as const,
-    severity: 'KRITIS',
-    severityColor: 'text-error',
-    payload: [],
-  },
-  {
-    label: 'Hapus Baris Anonim (DELETE)',
-    desc: 'Menguji apakah user anonim bisa menghapus data sensitif.',
-    icon: 'delete_forever',
-    url: '/rest/v1/orders?id=eq.999',
-    method: 'DELETE' as const,
-    severity: 'KRITIS',
-    severityColor: 'text-error',
-  },
-  {
-    label: 'Sisipkan Data Palsu (INSERT)',
-    desc: 'Menyuntikkan baris baru ke tabel tanpa izin autentikasi yang sah.',
-    icon: 'post_add',
-    url: '/rest/v1/reviews',
-    method: 'POST' as const,
-    severity: 'SEDANG',
-    severityColor: 'text-tertiary',
-    payload: [
-      { id: 'tmpl3', key: 'product_id', value: '1' },
-      { id: 'tmpl4', key: 'rating', value: '5' },
-      { id: 'tmpl5', key: 'body', value: 'Injected by SupaShield' },
-    ],
-  },
-];
-
 export default function ToolPage() {
+  const { t } = useI18n();
+
+  // Definisi Template Injeksi menggunakan terjemahan
+  const INJECTION_TEMPLATES = [
+    {
+      label: t('tool.tmpl1Label'),
+      desc: t('tool.tmpl1Desc'),
+      icon: 'person_search',
+      url: '/rest/v1/users?select=*',
+      method: 'GET' as const,
+      severity: t('tool.sevHigh'),
+      severityColor: 'text-error',
+    },
+    {
+      label: t('tool.tmpl2Label'),
+      desc: t('tool.tmpl2Desc'),
+      icon: 'admin_panel_settings',
+      url: '/rest/v1/profiles?id=eq.1',
+      method: 'PATCH' as const,
+      severity: t('tool.sevCrit'),
+      severityColor: 'text-error',
+      payload: [
+        { id: 'tmpl1', key: 'is_admin', value: 'true' },
+        { id: 'tmpl2', key: 'role', value: 'superadmin' },
+      ],
+    },
+    {
+      label: t('tool.tmpl3Label'),
+      desc: t('tool.tmpl3Desc'),
+      icon: 'group',
+      url: '/rest/v1/profiles?user_id=eq.VICTIM-UUID-HERE&select=*',
+      method: 'GET' as const,
+      severity: t('tool.sevHigh'),
+      severityColor: 'text-error',
+    },
+    {
+      label: t('tool.tmpl4Label'),
+      desc: t('tool.tmpl4Desc'),
+      icon: 'terminal',
+      url: '/rest/v1/rpc/get_all_users',
+      method: 'POST' as const,
+      severity: t('tool.sevCrit'),
+      severityColor: 'text-error',
+      payload: [],
+    },
+    {
+      label: t('tool.tmpl5Label'),
+      desc: t('tool.tmpl5Desc'),
+      icon: 'delete_forever',
+      url: '/rest/v1/orders?id=eq.999',
+      method: 'DELETE' as const,
+      severity: t('tool.sevCrit'),
+      severityColor: 'text-error',
+    },
+    {
+      label: t('tool.tmpl6Label'),
+      desc: t('tool.tmpl6Desc'),
+      icon: 'post_add',
+      url: '/rest/v1/reviews',
+      method: 'POST' as const,
+      severity: t('tool.sevMed'),
+      severityColor: 'text-tertiary',
+      payload: [
+        { id: 'tmpl3', key: 'product_id', value: '1' },
+        { id: 'tmpl4', key: 'rating', value: '5' },
+        { id: 'tmpl5', key: 'body', value: 'Injected by SupaShield' },
+      ],
+    },
+  ];
+
   // States Konfigurasi Utama
   const [baseUrl, setBaseUrl] = useState('');
   const [supabaseUrl, setSupabaseUrl] = useState('');
@@ -174,22 +177,22 @@ export default function ToolPage() {
   };
 
   const applyTemplate = (index: number) => {
-    const t = INJECTION_TEMPLATES[index];
+    const tmpl = INJECTION_TEMPLATES[index];
     setActiveTemplate(index);
 
     if (baseUrl) {
       const clean = baseUrl.replace(/\/+$/, '');
-      setSupabaseUrl(clean + t.url);
+      setSupabaseUrl(clean + tmpl.url);
     } else {
-      setSupabaseUrl('https://YOUR-PROJECT.supabase.co' + t.url);
+      setSupabaseUrl('https://YOUR-PROJECT.supabase.co' + tmpl.url);
     }
 
-    setMethod(t.method);
-    if (t.payload && t.payload.length > 0) {
-      setPayloadParams([...t.payload]);
+    setMethod(tmpl.method);
+    if (tmpl.payload && tmpl.payload.length > 0) {
+      setPayloadParams([...tmpl.payload]);
       // Juga set raw JSON agar sinkron
       const obj: Record<string, any> = {};
-      t.payload.forEach((p) => {
+      tmpl.payload.forEach((p) => {
         if (p.key) {
           let val: any = p.value;
           if (val === 'true') val = true;
@@ -212,11 +215,11 @@ export default function ToolPage() {
     setFormError(null);
 
     if (!supabaseUrl || !supabaseKey) {
-      setFormError('URL Target dan Kunci JWT Akses wajib disertakan sebelum eksekusi!');
+      setFormError(t('tool.errMissingVal'));
       return;
     }
     if (!supabaseUrl.startsWith('http://') && !supabaseUrl.startsWith('https://')) {
-      setFormError('URL harus berawalan http:// atau https://');
+      setFormError(t('tool.errHttpUrl'));
       return;
     }
 
@@ -242,7 +245,7 @@ export default function ToolPage() {
       setResponse({
         status: 500,
         statusText: 'Client Fetch Error',
-        data: 'Koneksi ke backend proxy gagal. Pastikan server dev berjalan.',
+        data: t('tool.errFetch'),
       });
     } finally {
       setIsExecuting(false);
@@ -256,15 +259,15 @@ export default function ToolPage() {
     if (response.status >= 200 && response.status < 300) {
       if (method === 'GET' && Array.isArray(response.data) && response.data.length === 0) {
         return {
-          title: 'AMAN / DATA KOSONG',
-          desc: 'Status 200 OK tapi data kosong. RLS kemungkinan memfilter seluruh baris — atau tabel memang tidak berisi data.',
+          title: t('tool.verdSafeTitle'),
+          desc: t('tool.verdSafeDesc'),
           isError: false,
           color: 'text-primary',
         };
       }
       return {
-        title: 'KERENTANAN TERBUKA',
-        desc: `HTTP ${response.status} — Server menerima dan mengeksekusi payload. Jika Anda melihat atau memodifikasi data akun pengguna lain, RLS Anda tembus!`,
+        title: t('tool.verdVulnTitle'),
+        desc: t('tool.verdVulnDesc').replace('{status}', response.status.toString()),
         isError: true,
         color: 'text-error',
       };
@@ -272,8 +275,8 @@ export default function ToolPage() {
 
     if (response.status === 401 || response.status === 403) {
       return {
-        title: 'BENTENG AKTIF',
-        desc: `Status ${response.status}. Row Level Security berhasil menolak operasi asing. Serangan tergagalkan.`,
+        title: t('tool.verdActiveTitle'),
+        desc: t('tool.verdActiveDesc').replace('{status}', response.status.toString()),
         isError: false,
         color: 'text-primary',
       };
@@ -281,16 +284,16 @@ export default function ToolPage() {
 
     if (response.status === 404) {
       return {
-        title: 'TARGET MATI',
-        desc: 'Status 404. Route/tabel tidak ditemukan. Pastikan path endpoint benar.',
+        title: t('tool.verdTargetMatTitle'),
+        desc: t('tool.verdTargetMatDesc'),
         isError: true,
         color: 'text-tertiary',
       };
     }
 
     return {
-      title: 'ANOMALI API',
-      desc: `HTTP ${response.status}. Respons tidak umum. Periksa sintaks filter PostgREST (eq, gt, in, dll).`,
+      title: t('tool.verdAnomalyTitle'),
+      desc: t('tool.verdAnomalyDesc').replace('{status}', response.status.toString()),
       isError: true,
       color: 'text-tertiary',
     };
@@ -303,10 +306,10 @@ export default function ToolPage() {
       {/* Hero Branding */}
       <div className="mb-12 border-l-4 border-primary-dim pl-6">
         <h1 className="font-black tracking-tighter text-5xl md:text-8xl uppercase mb-2">
-          Penetrasi <span className="text-primary-dim">Langsung</span>
+          {t('tool.heroTitlePart1')} <span className="text-primary-dim">{t('tool.heroTitlePart2')}</span>
         </h1>
         <p className="font-mono text-secondary uppercase tracking-widest text-xs md:text-sm">
-          Injeksi Route Proxy Server-Side :: SupaShield v4.02.1
+          {t('tool.heroSubtitle')}
         </p>
       </div>
 
@@ -316,7 +319,7 @@ export default function ToolPage() {
           {/* Base URL Helper */}
           <div className="bg-surface-container-low p-5 border-l-2 border-secondary/40">
             <h3 className="font-mono text-[10px] text-secondary mb-3 uppercase tracking-widest flex items-center gap-2">
-              <span className="material-symbols-outlined text-sm">link</span> Base URL Proyek
+              <span className="material-symbols-outlined text-sm">link</span> {t('tool.baseUrlTitle')}
             </h3>
             <input
               value={baseUrl}
@@ -326,32 +329,32 @@ export default function ToolPage() {
               type="text"
             />
             <p className="mt-2 font-mono text-[9px] text-outline-variant leading-relaxed">
-              Isi Base URL proyek, lalu klik template di bawah agar path otomatis terpasang.
+              {t('tool.baseUrlDesc')}
             </p>
           </div>
 
           {/* Session Status */}
           <div className="bg-surface-container-low p-5 border-l-2 border-primary/30">
             <h3 className="font-mono text-[10px] text-primary mb-3 uppercase tracking-widest flex items-center gap-2">
-              <span className="material-symbols-outlined text-sm">monitor_heart</span> Status Sesi
+              <span className="material-symbols-outlined text-sm">monitor_heart</span> {t('tool.statusTitle')}
             </h3>
             <div className="space-y-2 font-mono text-[10px] text-on-surface-variant">
               <div className="flex justify-between">
-                <span>PROXY</span>
-                <span className="text-primary-dim">AKTIF</span>
+                <span>{t('tool.statusProxy')}</span>
+                <span className="text-primary-dim">{t('tool.statusProxyVal')}</span>
               </div>
               <div className="flex justify-between">
-                <span>CORS_BYPASS</span>
-                <span className="text-primary-dim">OK</span>
+                <span>{t('tool.statusCors')}</span>
+                <span className="text-primary-dim">{t('tool.statusCorsVal')}</span>
               </div>
               <div className="flex justify-between">
-                <span>TARGET</span>
+                <span>{t('tool.statusTarget')}</span>
                 <span className={supabaseUrl ? 'text-primary' : 'text-secondary'}>
-                  {supabaseUrl ? 'TERKUNCI' : 'MENUNGGU...'}
+                  {supabaseUrl ? t('tool.statusTargetValLocked') : t('tool.statusTargetValWait')}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>METODE</span>
+                <span>{t('tool.statusMethod')}</span>
                 <span className="text-tertiary">{method}</span>
               </div>
             </div>
@@ -360,13 +363,13 @@ export default function ToolPage() {
           {/* Injection Templates */}
           <div className="bg-surface-container-low p-5 space-y-3">
             <h3 className="font-mono text-[10px] text-primary mb-1 uppercase tracking-widest flex items-center gap-2">
-              <span className="material-symbols-outlined text-sm">science</span> Template Injeksi
+              <span className="material-symbols-outlined text-sm">science</span> {t('tool.tmplTitle')}
             </h3>
             <p className="font-mono text-[9px] text-outline-variant mb-3 leading-relaxed">
-              Skenario kerentanan umum Supabase yang bisa dites langsung.
+              {t('tool.tmplDesc')}
             </p>
             <div className="space-y-2 max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
-              {INJECTION_TEMPLATES.map((t, i) => (
+              {INJECTION_TEMPLATES.map((tmpl, i) => (
                 <button
                   key={i}
                   onClick={() => applyTemplate(i)}
@@ -378,19 +381,19 @@ export default function ToolPage() {
                 >
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[14px]">{t.icon}</span>
-                      <span className="uppercase font-bold tracking-wide">{t.label}</span>
+                      <span className="material-symbols-outlined text-[14px]">{tmpl.icon}</span>
+                      <span className="uppercase font-bold tracking-wide">{tmpl.label}</span>
                     </div>
-                    <span className={`text-[8px] font-bold ${t.severityColor}`}>{t.severity}</span>
+                    <span className={`text-[8px] font-bold ${tmpl.severityColor}`}>{tmpl.severity}</span>
                   </div>
                   <p className="text-[9px] text-outline-variant group-hover:text-on-surface-variant leading-relaxed pl-5">
-                    {t.desc}
+                    {tmpl.desc}
                   </p>
                   <div className="mt-1.5 pl-5 flex items-center gap-2 text-[9px]">
-                    <span className={`px-1.5 py-0.5 border ${t.method === 'GET' ? 'border-primary/30 text-primary' : t.method === 'DELETE' ? 'border-error/30 text-error' : 'border-tertiary/30 text-tertiary'}`}>
-                      {t.method}
+                    <span className={`px-1.5 py-0.5 border ${tmpl.method === 'GET' ? 'border-primary/30 text-primary' : tmpl.method === 'DELETE' ? 'border-error/30 text-error' : 'border-tertiary/30 text-tertiary'}`}>
+                      {tmpl.method}
                     </span>
-                    <span className="text-outline-variant truncate">{t.url}</span>
+                    <span className="text-outline-variant truncate">{tmpl.url}</span>
                   </div>
                 </button>
               ))}
@@ -421,13 +424,13 @@ export default function ToolPage() {
             <section className="p-6 border-b border-outline-variant/20 relative z-10">
               <div className="flex items-center gap-3 mb-5">
                 <span className="bg-primary text-on-primary text-[10px] font-bold w-6 h-6 flex items-center justify-center">01</span>
-                <h2 className="font-mono text-sm uppercase tracking-tight">URL Target Injeksi</h2>
+                <h2 className="font-mono text-sm uppercase tracking-tight">{t('tool.sec1Title')}</h2>
               </div>
 
               <div className="space-y-5">
                 <div className="group relative z-20">
                   <label className="block font-mono text-[10px] text-on-surface-variant uppercase mb-2 tracking-wide">
-                    Tautan Lengkap API Endpoint (include query params)
+                    {t('tool.sec1LblUrl')}
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-[16px] text-outline">language</span>
@@ -444,13 +447,13 @@ export default function ToolPage() {
                   </div>
                   <p className="mt-1.5 font-mono text-[9px] text-outline-variant flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-[10px]">info</span>
-                    Seluruh filter PostgREST boleh ditulis langsung di URL. Payload Builder hanya untuk body JSON.
+                    {t('tool.sec1LblUrlHint')}
                   </p>
                 </div>
 
                 <div className="group relative z-20 max-w-xl">
                   <label className="block font-mono text-[10px] text-on-surface-variant uppercase mb-2 tracking-wide">
-                    Kunci JWT (Anon Key / Bearer Token)
+                    {t('tool.sec1LblKey')}
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-[16px] text-outline">key</span>
@@ -480,7 +483,7 @@ export default function ToolPage() {
             <section className="p-6 border-b border-outline-variant/20 relative z-10">
               <div className="flex items-center gap-3 mb-5">
                 <span className="bg-primary text-on-primary text-[10px] font-bold w-6 h-6 flex items-center justify-center">02</span>
-                <h2 className="font-mono text-sm uppercase tracking-tight">Vektor Metode</h2>
+                <h2 className="font-mono text-sm uppercase tracking-tight">{t('tool.sec2Title')}</h2>
               </div>
               <div className="grid grid-cols-3 md:grid-cols-6 gap-2 relative z-20">
                 {(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const).map((m) => (
@@ -511,7 +514,7 @@ export default function ToolPage() {
               <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                 <div className="flex items-center gap-3">
                   <span className="bg-primary text-on-primary text-[10px] font-bold w-6 h-6 flex items-center justify-center">03</span>
-                  <h2 className="font-mono text-sm uppercase tracking-tight">Payload Body</h2>
+                  <h2 className="font-mono text-sm uppercase tracking-tight">{t('tool.sec3Title')}</h2>
                 </div>
                 <div className="flex items-center gap-0 relative z-20">
                   <button
@@ -524,7 +527,7 @@ export default function ToolPage() {
                   >
                     <span className="flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-[12px]">list</span>
-                      Key-Value
+                      {t('tool.pbModeKv')}
                     </span>
                   </button>
                   <button
@@ -537,7 +540,7 @@ export default function ToolPage() {
                   >
                     <span className="flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-[12px]">data_object</span>
-                      Raw JSON
+                      {t('tool.pbModeRaw')}
                     </span>
                   </button>
                 </div>
@@ -547,14 +550,14 @@ export default function ToolPage() {
               {payloadMode === 'kv' && (
                 <>
                   <p className="font-mono text-[9px] text-outline-variant mb-4 leading-relaxed max-w-2xl">
-                    Susun body JSON sebagai pasangan key-value. Tipe data otomatis dideteksi (true/false → boolean, angka → number).
+                    {t('tool.pbKvDesc')}
                   </p>
                   <div className="space-y-2 relative z-20">
                     {payloadParams.map((param) => (
                       <div key={param.id} className="flex gap-2 items-center group">
                         <input
                           className={`flex-1 bg-surface-container-lowest border font-mono text-xs p-2.5 text-primary outline-none focus:border-primary transition-all ${param.key ? 'border-primary/40' : 'border-outline-variant/40'}`}
-                          placeholder="Kunci JSON"
+                          placeholder={t('tool.pbKvKey')}
                           type="text"
                           value={param.key}
                           onChange={(e) => updateParam(param.id, 'key', e.target.value)}
@@ -562,7 +565,7 @@ export default function ToolPage() {
                         <span className="text-outline-variant font-mono text-xs">:</span>
                         <input
                           className={`flex-1 bg-surface-container-lowest border font-mono text-xs p-2.5 text-on-surface outline-none focus:border-primary transition-all ${param.value ? 'border-primary/40' : 'border-outline-variant/40'}`}
-                          placeholder="Isi Nilai"
+                          placeholder={t('tool.pbKvVal')}
                           type="text"
                           value={param.value}
                           onChange={(e) => updateParam(param.id, 'value', e.target.value)}
@@ -580,7 +583,7 @@ export default function ToolPage() {
                       className="w-full mt-2 py-2 border border-dashed border-outline-variant/40 hover:border-primary/60 text-outline-variant hover:text-primary font-mono text-[10px] uppercase flex items-center justify-center gap-2 transition-all"
                     >
                       <span className="material-symbols-outlined text-[14px]">add</span>
-                      Tambah Baris
+                      {t('tool.pbKvAdd')}
                     </button>
                   </div>
                 </>
@@ -590,7 +593,7 @@ export default function ToolPage() {
               {payloadMode === 'raw' && (
                 <div className="relative z-20">
                   <p className="font-mono text-[9px] text-outline-variant mb-3 leading-relaxed max-w-2xl">
-                    Tulis atau tempelkan body JSON mentah langsung. Cocok untuk payload kompleks, nested object, atau array.
+                    {t('tool.pbRawDesc')}
                   </p>
                   <div className="relative">
                     {/* Line numbers gutter */}
@@ -622,18 +625,18 @@ export default function ToolPage() {
                         jsonError ? (
                           <span className="font-mono text-[9px] text-error flex items-center gap-1.5">
                             <span className="material-symbols-outlined text-[12px]">error</span>
-                            JSON Tidak Valid: {jsonError.length > 60 ? jsonError.slice(0, 60) + '...' : jsonError}
+                            {t('tool.pbRawInvalid')}: {jsonError.length > 60 ? jsonError.slice(0, 60) + '...' : jsonError}
                           </span>
                         ) : (
                           <span className="font-mono text-[9px] text-primary-dim flex items-center gap-1.5">
                             <span className="material-symbols-outlined text-[12px]">check_circle</span>
-                            JSON Valid
+                            {t('tool.pbRawValid')}
                           </span>
                         )
                       )}
                       {!rawJsonBody.trim() && (
                         <span className="font-mono text-[9px] text-outline-variant">
-                         Menunggu input JSON...
+                          {t('tool.pbRawWait')}
                         </span>
                       )}
                     </div>
@@ -649,7 +652,7 @@ export default function ToolPage() {
                         disabled={!rawJsonBody.trim() || !!jsonError}
                         className="px-3 py-1 text-[9px] font-mono uppercase text-outline-variant hover:text-primary border border-outline-variant/30 hover:border-primary/40 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                       >
-                        Prettify
+                        {t('tool.pbRawPrettify')}
                       </button>
                       <button
                         onClick={() => {
@@ -662,7 +665,7 @@ export default function ToolPage() {
                         disabled={!rawJsonBody.trim() || !!jsonError}
                         className="px-3 py-1 text-[9px] font-mono uppercase text-outline-variant hover:text-secondary border border-outline-variant/30 hover:border-secondary/40 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                       >
-                        Minify
+                        {t('tool.pbRawMinify')}
                       </button>
                     </div>
                   </div>
@@ -688,7 +691,7 @@ export default function ToolPage() {
                 >
                   <span className="flex items-center gap-3">
                     <span className="w-4 h-4 border-2 border-secondary border-t-transparent animate-spin"></span>
-                    MENGINJEKSI...
+                    {t('tool.btnExeWait')}
                   </span>
                 </button>
               ) : (
@@ -698,7 +701,7 @@ export default function ToolPage() {
                 >
                   <span className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-xl group-hover:rotate-90 transition-transform duration-300">bolt</span>
-                    Eksekusi Serangan
+                    {t('tool.btnExe')}
                   </span>
                 </button>
               )}
@@ -711,7 +714,7 @@ export default function ToolPage() {
                 <div className="bg-surface-container-highest px-6 py-3 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <span className="bg-secondary text-on-secondary-container text-[10px] font-bold w-6 h-6 flex items-center justify-center">04</span>
-                    <h2 className="font-mono text-sm uppercase tracking-tight">Hasil Pemindaian</h2>
+                    <h2 className="font-mono text-sm uppercase tracking-tight">{t('tool.resTitle')}</h2>
                   </div>
                   <div className="flex items-center gap-3 flex-wrap">
                     <span
@@ -735,13 +738,13 @@ export default function ToolPage() {
                     {/* Data Panels */}
                     <div className="space-y-4">
                       <div className="bg-surface-container-lowest border border-outline-variant/20 p-4 h-28 overflow-hidden">
-                        <p className="font-mono text-[9px] text-primary uppercase mb-2 tracking-widest">Response Headers</p>
+                        <p className="font-mono text-[9px] text-primary uppercase mb-2 tracking-widest">{t('tool.resHeaders')}</p>
                         <pre className="font-mono text-[10px] text-on-surface-variant leading-relaxed h-full overflow-y-auto custom-scrollbar">
-                          {response.headers || 'Header tidak tertangkap.'}
+                          {response.headers || t('tool.resNoHeaders')}
                         </pre>
                       </div>
                       <div className="bg-surface-container-lowest border border-outline-variant/20 p-4 h-60 overflow-hidden">
-                        <p className="font-mono text-[9px] text-secondary uppercase mb-2 tracking-widest">Response Body</p>
+                        <p className="font-mono text-[9px] text-secondary uppercase mb-2 tracking-widest">{t('tool.resBody')}</p>
                         <pre className="font-mono text-[10px] text-secondary-dim leading-relaxed h-full pb-6 overflow-y-auto custom-scrollbar whitespace-pre-wrap">
                           {typeof response.data === 'string'
                             ? response.data
@@ -781,7 +784,7 @@ export default function ToolPage() {
                           </span>
 
                           <p className={`font-mono text-[10px] uppercase tracking-[0.2em] mb-2 ${verdict.color}`}>
-                            Analisis Forensik
+                            {t('tool.resForensic')}
                           </p>
                           <h3
                             className={`text-2xl lg:text-3xl font-black uppercase tracking-tighter mb-4 ${verdict.color} glitch-hover`}
@@ -795,13 +798,13 @@ export default function ToolPage() {
                           {!verdict.isError && (
                             <div className="mt-6 px-4 py-2.5 bg-primary/10 border border-primary/20 text-primary font-mono text-[10px] uppercase font-bold inline-flex items-center gap-2">
                               <span className="material-symbols-outlined text-sm">shield</span>
-                              RLS Melindungi Database
+                              {t('tool.resShieldMsg')}
                             </div>
                           )}
                           {verdict.isError && verdict.color === 'text-error' && (
                             <div className="mt-6 px-4 py-2.5 bg-error/10 border border-error/20 text-error font-mono text-[10px] uppercase font-bold inline-flex items-center gap-2">
                               <span className="material-symbols-outlined text-sm">bug_report</span>
-                              Celah Ditemukan — Segera Perbaiki RLS!
+                              {t('tool.resVulnMsg')}
                             </div>
                           )}
                         </div>
@@ -819,13 +822,13 @@ export default function ToolPage() {
       <div className="mt-12 flex flex-wrap justify-between items-center font-mono text-[10px] text-outline px-2 gap-4">
         <div className="flex items-center gap-4">
           <span>
-            <span className="text-primary-dim">●</span> PROXY ONLINE
+            <span className="text-primary-dim">●</span> {t('tool.sysProxy')}
           </span>
           <span>TLS v1.3</span>
           <span>PID: 0x8DA4</span>
         </div>
         <div className="flex items-center gap-2">
-          <span>DETAK JANTUNG</span>
+          <span>{t('tool.sysHeartbeat')}</span>
           <span className="w-2 h-2 bg-primary-dim animate-pulse"></span>
         </div>
       </div>
