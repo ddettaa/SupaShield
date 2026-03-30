@@ -136,7 +136,7 @@ export default function ToolPage() {
         let val: any = p.value;
         if (val === 'true') val = true;
         else if (val === 'false') val = false;
-        else if (!isNaN(Number(val)) && val.trim() !== '') val = Number(val);
+        else if (!isNaN(Number(val)) && val.trim() !== '' && !val.trim().toLowerCase().startsWith('0x')) val = Number(val);
         obj[p.key] = val;
       }
     });
@@ -194,7 +194,7 @@ export default function ToolPage() {
           let val: any = p.value;
           if (val === 'true') val = true;
           else if (val === 'false') val = false;
-          else if (!isNaN(Number(val)) && val.trim() !== '') val = Number(val);
+          else if (!isNaN(Number(val)) && val.trim() !== '' && !val.trim().toLowerCase().startsWith('0x')) val = Number(val);
           obj[p.key] = val;
         }
       });

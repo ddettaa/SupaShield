@@ -59,7 +59,7 @@ export async function POST(request: Request) {
             let val: any = param.value;
             if (val === 'true') val = true;
             else if (val === 'false') val = false;
-            else if (!isNaN(Number(val)) && typeof val === 'string' && val.trim() !== '') {
+            else if (!isNaN(Number(val)) && typeof val === 'string' && val.trim() !== '' && !val.trim().toLowerCase().startsWith('0x')) {
               val = Number(val);
             }
             bodyObj[param.key] = val;
